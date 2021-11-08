@@ -13,6 +13,8 @@ This project uses an ESP8266 loaded with [MicroPython](https://micropython.org/)
 - I split out `mainprogram.py` from `main.py` so that you can run `import mainprogram` from WebREPL for debugging purposes
 - This calculates rolling averages for PM and CO2 to smooth out any potential spikes
 - Per the datasheet, the MH-Z19C can take 24 hours or longer to self-calibrate
+- Per the `SenseAir S8 0053` (note the **0053**) datasheet it also supports PWM output in the same exact format as the MH-Z19* so you _should_ be able to use them interchangeably, however I have not tested this.
+- Grafana supports Alerts to multiple destinations, such as email. You can configure these alerts on the various dashboards to notify you when the values cross a certain threshold, which gives you the additional benefit of notifying you when Influx is no longer receiving data. I put in some fairly aggressive thresholds (compared to what I could find online and via the EPA), but feel free to tweak them as needed.
 
 ## How to use
 - Install MicroPython on your device
