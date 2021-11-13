@@ -160,6 +160,10 @@ async def co2_handle_reading():
     global co2_currentReadingIdx, co2_numReadings
     while True:
         try:
+            # we need to wait for the line to go back to low before calling `time_pulse_us`
+            # since `time_pulse_ms` will otherwise read in the middle of a pulse
+            while co2Pin.value():
+                time.sleep_ms(1)
             raw_value = int(time_pulse_us(co2Pin, 1)/1000)
             calculated = 2000 * (raw_value - 2) / (raw_value + (1004 - raw_value) - 4)
 
