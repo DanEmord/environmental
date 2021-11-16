@@ -1,6 +1,7 @@
 from machine import UART
 from machine import Pin
 from machine import time_pulse_us
+from machine import WDT
 import uasyncio as asyncio
 import pms5003
 import dht
@@ -11,10 +12,12 @@ import gc
 import configs
 from helper_functions import *
 
-# Init some sensors
+# Init some sensors and watchdog monitoring
 pm = None
 dhtSensor = dht.DHT22(Pin(configs.DHT_SENSOR_PIN))
 co2Pin = Pin(configs.CO2_SENSOR_PIN, Pin.IN, Pin.PULL_UP)
+wdt = None
+nic = network.WLAN(network.STA_IF)
 
 # Some additional config stuff
 influx_headers = {
@@ -227,9 +230,19 @@ async def mem_post_to_influx():
             print('Caught exception in mem_post_to_influx, {}'.format(e))
             continue
 
+async def wdt_checker():
+    while True:
+        try:
+            if nic.isconnected():
+                wdt.feed()
+            await asyncio.sleep_ms(100)
+        except Exception as e:
+            print('Caught exception in wdt_checker, {}'.format(e))
+            continue
+
 def start():
     uart = UART(0, 9600, parity=None, stop=1, bits=8, rxbuf=64, timeout=250)
-    global pm
+    global pm, wdt
     pm = pms5003.PMS5003(uart, active_mode=False, eco_mode=False, interval_passive_mode=configs.PM_PASSIVE_MODE_INTERVAL, accept_zero_values=True)
     pms5003.set_debug(False)
     pm.registerCallback(pm_handle_reading)
@@ -238,6 +251,8 @@ def start():
     asyncio.create_task(co2_handle_reading())
     asyncio.create_task(co2_post_to_influx())
     if configs.SEND_MEMORY_INFO_TO_INFLUX: asyncio.create_task(mem_post_to_influx())
+    wdt = WDT()
+    asyncio.create_task(wdt_checker())
     asyncio.get_event_loop().run_forever()
 
 start()
