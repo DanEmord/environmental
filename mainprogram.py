@@ -78,6 +78,7 @@ async def pm_handle_reading():
 
 async def pm_post_to_influx():
     while True:
+        start_ticks = time.ticks_ms()
         if pm_numReadings > configs.MIN_READINGS_FOR_POST:
             try:
                 pm_calculate_average()
@@ -121,12 +122,13 @@ async def pm_post_to_influx():
             except Exception as e:
                 print('Caught exception in pm_post_to_influx, {}'.format(e))
                 continue
-        await asyncio.sleep(configs.POST_TO_INFLUX_INTERVAL)
+        await asyncio.sleep(configs.POST_TO_INFLUX_INTERVAL - (time.ticks_ms() - start_ticks) / 1000)
 ########### END PMS METHODS
 
 ########### BEGIN DHT METHODS
 async def dht_post_to_influx():
     while True:
+        start_ticks = time.ticks_ms()
         try:
             dhtSensor.measure()
             data_to_submit = (  
@@ -150,7 +152,7 @@ async def dht_post_to_influx():
         except Exception as e:
             print('Caught exception in dht_post_to_influx, {}'.format(e))
             continue
-        await asyncio.sleep(configs.POST_TO_INFLUX_INTERVAL)
+        await asyncio.sleep(configs.POST_TO_INFLUX_INTERVAL - (time.ticks_ms() - start_ticks) / 1000)
 
 ########### END DHT METHODS
 
@@ -162,6 +164,7 @@ def co2_calculate_average():
 async def co2_handle_reading():
     global co2_currentReadingIdx, co2_numReadings
     while True:
+        start_ticks = time.ticks_ms()
         try:
             # we need to wait for the line to go back to low before calling `time_pulse_us`
             # since `time_pulse_ms` will otherwise read in the middle of a pulse
@@ -176,10 +179,11 @@ async def co2_handle_reading():
         except Exception as e:
             print('Caught exception in co2_handle_reading, {}'.format(e))
             continue
-        await asyncio.sleep(configs.CO2_READING_INTERVAL)
+        await asyncio.sleep(configs.CO2_READING_INTERVAL - (time.ticks_ms() - start_ticks) / 1000)
 
 async def co2_post_to_influx():
     while True:
+        start_ticks = time.ticks_ms()
         if co2_numReadings > configs.MIN_READINGS_FOR_POST:
             try:
                 co2_calculate_average()
@@ -201,7 +205,7 @@ async def co2_post_to_influx():
             except Exception as e:
                 print('Caught exception in co2_post_to_influx, {}'.format(e))
                 continue
-        await asyncio.sleep(configs.POST_TO_INFLUX_INTERVAL)
+        await asyncio.sleep(configs.POST_TO_INFLUX_INTERVAL - (time.ticks_ms() - start_ticks) / 1000)
 ########### END CO2 METHODS
 
 async def mem_post_to_influx():
